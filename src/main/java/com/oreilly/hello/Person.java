@@ -13,11 +13,21 @@ public class Person implements Comparable<Person> {
     private String last;
     private LocalDate dob;
 
+    private String firstName;
+
     public Person(Integer id, String first, String last, LocalDate dob) {
         this.id = id;
         this.first = first;
         this.last = last;
         this.dob = dob;
+    }
+
+    public String getFirstName() {
+        return firstName;
+    }
+
+    public void setFirstName(String firstName) {
+        this.firstName = firstName;
     }
 
     public Person(String first, String last, LocalDate dob) {

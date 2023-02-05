@@ -37,5 +37,10 @@ public class AstroGatewayHttpClient implements Gateway<AstroResponse> {
         } catch (IOException | InterruptedException e) {
             throw new RuntimeException(e);
         }
+//        return null;
+    }
+
+    public static void main(String[] args) {
+
     }
 }

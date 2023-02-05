@@ -2,6 +2,7 @@ package com.oreilly.astro;
 
 import com.oreilly.astro.json.Assignment;
 import com.oreilly.astro.json.AstroResponse;
+import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
