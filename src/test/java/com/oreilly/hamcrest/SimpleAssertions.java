@@ -1,7 +1,7 @@
 package com.oreilly.hamcrest;
 
 import com.oreilly.hello.Person;
-import org.junit.Test;
+import org.testng.annotations.Test;
 
 import java.math.BigDecimal;
 import java.time.LocalDate;
