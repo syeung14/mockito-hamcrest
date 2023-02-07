@@ -1,11 +1,14 @@
 package com.oreilly.hello;
 
-import com.oreilly.hello.Person;
-import com.oreilly.hello.PersonRepository;
-import com.oreilly.hello.PersonService;
 import org.junit.Before;
 import org.junit.Test;
-import org.mockito.*;
+import org.mockito.ArgumentCaptor;
+import org.mockito.Captor;
+import org.mockito.InjectMocks;
+import org.mockito.Mock;
+import org.mockito.MockitoAnnotations;
+import org.mockito.invocation.InvocationOnMock;
+import org.mockito.stubbing.Answer;
 
 import java.time.LocalDate;
 import java.time.Month;
@@ -15,10 +18,22 @@ import java.util.Optional;
 
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.contains;
-import static org.hamcrest.Matchers.*;
+import static org.hamcrest.Matchers.containsInAnyOrder;
+import static org.hamcrest.Matchers.emptyCollectionOf;
+import static org.hamcrest.Matchers.equalTo;
+import static org.hamcrest.Matchers.is;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.Mockito.*;
+import static org.mockito.Mockito.anyInt;
+import static org.mockito.Mockito.argThat;
+import static org.mockito.Mockito.doAnswer;
+import static org.mockito.Mockito.doNothing;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.never;
+import static org.mockito.Mockito.times;
+import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.verifyNoMoreInteractions;
+import static org.mockito.Mockito.when;
 
 public class PersonServiceTest {
 
@@ -32,19 +47,18 @@ public class PersonServiceTest {
     private ArgumentCaptor<Person> personArg;
 
     private final List<Person> people = Arrays.asList(
-            new Person(1, "Grace", "Hopper", LocalDate.of(1906, Month.DECEMBER, 9)),
-            new Person(2, "Ada", "Lovelace", LocalDate.of(1815, Month.DECEMBER, 10)),
-            new Person(3, "Adele", "Goldberg", LocalDate.of(1945, Month.JULY, 7)),
-            new Person(14, "Anita", "Borg", LocalDate.of(1949, Month.JANUARY, 17)),
-            new Person(5, "Barbara", "Liskov", LocalDate.of(1939, Month.NOVEMBER, 7)));
+        new Person(1, "Grace", "Hopper", LocalDate.of(1906, Month.DECEMBER, 9)),
+        new Person(2, "Ada", "Lovelace", LocalDate.of(1815, Month.DECEMBER, 10)),
+        new Person(3, "Adele", "Goldberg", LocalDate.of(1945, Month.JULY, 7)),
+        new Person(14, "Anita", "Borg", LocalDate.of(1949, Month.JANUARY, 17)),
+        new Person(5, "Barbara", "Liskov", LocalDate.of(1939, Month.NOVEMBER, 7)));
 
     @Before
     public void init() {
         // MockitoAnnotations.initMocks(this);
         MockitoAnnotations.openMocks(this);
 
-        when(repository.findAll())
-                .thenReturn(people);
+        when(repository.findAll()).thenReturn(people);
     }
 
     @Test
@@ -55,15 +69,12 @@ public class PersonServiceTest {
 
     @Test
     public void getLastNames() {
-        assertThat(service.getLastNames(),
-                containsInAnyOrder("Borg", "Goldberg", "Hopper",
-                        "Liskov", "Lovelace"));
+        assertThat(service.getLastNames(), containsInAnyOrder("Borg", "Goldberg", "Hopper", "Liskov", "Lovelace"));
     }
 
     @Test
     public void getTotalPeople() {
-        when(repository.count())
-                .thenReturn((long) people.size());
+        when(repository.count()).thenReturn((long) people.size());
 
         assertThat(service.getTotalPeople(), is(equalTo((long) people.size())));
     }
@@ -71,16 +82,10 @@ public class PersonServiceTest {
     @Test
     public void saveAllPeople() {
         when(repository.save(any(Person.class)))
-                .thenReturn(people.get(0),
-                        people.get(1),
-                        people.get(2),
-                        people.get(3),
-                        people.get(4));
+            .thenReturn(people.get(0), people.get(1), people.get(2), people.get(3), people.get(4));
 
         // test the service (which uses the mock)
-        assertThat(service.savePeople(people.get(0), people.get(1),
-                people.get(2), people.get(3), people.get(4)),
-                containsInAnyOrder(1, 2, 3, 14, 5));
+        assertThat(service.savePeople(people.get(0), people.get(1), people.get(2), people.get(3), people.get(4)), containsInAnyOrder(1, 2, 3, 14, 5));
 
         // verify the interaction between the service and the mock
         verify(repository, times(5)).save(any(Person.class));
@@ -91,30 +96,26 @@ public class PersonServiceTest {
     @Test
     public void useAnswer() {
         // Anonymous inner class
-//        when(repository.save(any(Person.class)))
-//                .thenAnswer(new Answer<Person>() {
-//                    @Override
-//                    public Person answer(InvocationOnMock invocation) throws Throwable {
-//                        return invocation.getArgument(0);
-//                    }
-//                });
+        //        when(repository.save(any(Person.class)))
+        //                .thenAnswer(new Answer<Person>() {
+        //                    @Override
+        //                    public Person answer(InvocationOnMock invocation) throws Throwable {
+        //                        return invocation.getArgument(0);
+        //                    }
+        //                });
 
         // Lambda expression implementation of Answer<Person>
-        when(repository.save(any(Person.class)))
-                .thenAnswer(invocation -> invocation.getArgument(0));
+        when(repository.save(any(Person.class))).thenAnswer(invocation -> invocation.getArgument(0));
 
         List<Integer> ids = service.savePeople(people.toArray(new Person[0]));
 
-        Integer[] actuals = people.stream()
-                .map(Person::getId)
-                .toArray(Integer[]::new);
+        Integer[] actuals = people.stream().map(Person::getId).toArray(Integer[]::new);
         assertThat(ids, contains(actuals));
     }
 
     @Test(expected = RuntimeException.class)
     public void savePersonThrowsException() {
-        when(repository.save(any(Person.class)))
-                .thenThrow(RuntimeException.class);
+        when(repository.save(any(Person.class))).thenThrow(RuntimeException.class);
 
         service.savePeople(people.get(0));
     }
@@ -123,10 +124,7 @@ public class PersonServiceTest {
     public void createPerson() {
         Person hopper = people.get(0);
 
-        Person person = service.createPerson(hopper.getId(),
-                hopper.getFirst(),
-                hopper.getLast(),
-                hopper.getDob());
+        Person person = service.createPerson(hopper.getId(), hopper.getFirst(), hopper.getLast(), hopper.getDob());
 
         verify(repository).save(personArg.capture());
         assertThat(personArg.getValue(), is(hopper));  // verifies the local variable
@@ -157,15 +155,13 @@ public class PersonServiceTest {
 
     @Test
     public void findByIdsThatDoExist() {
-        when(repository.findById(anyInt()))
-                .thenAnswer(invocation -> people.stream()
-                        .filter(person ->
-                                invocation.getArgument(0).equals(person.getId()))
-                        .findFirst());
+        when(repository.findById(anyInt())).thenAnswer(invocation -> people
+            .stream()
+            .filter(person -> invocation.getArgument(0).equals(person.getId()))
+            .findFirst());
 
         List<Person> personList = service.findByIds(1, 3, 5);
-        assertThat(personList, contains(people.get(0),
-                people.get(2),
-                people.get(4)));
+        assertThat(personList, contains(people.get(0), people.get(2), people.get(4)));
     }
+
 }
